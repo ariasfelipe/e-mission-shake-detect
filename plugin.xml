@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
+        id="edu.berkeley.eecs.emission.cordova.shakedetect"
+        version="1.0.0">
+
+  <name>ShakeDetection</name>
+  <description>Shake detection for incident reporting </description>
+  <author>Felipe Arias (felipea2@illinois.edu))</author>
+  <license>Modified BSD license</license>
+
+  <engines>
+    <engine name="cordova" version=">=3.6.0"/>
+  </engines>
+
+  <asset src="www/ui/ionic/templates/main-shake-detect-settings.html" target="templates/control/main-shake-detect-settings.html"/>
+  <asset src="www/ui/ionic/templates/shake-detect-display-detail.html" target="templates/control/shake-detect-display-detail.html"/>
+  <asset src="www/ui/ionic/js/shake-detect-settings.js" target="js/control/shake-detect-settings.js"/>
+
+  <js-module src="www/shakeDetect.js" name="ShakeDetect">
+    <clobbers target="cordova.plugins.BEMShakeDetection" />
+  </js-module>
+
+  <!--
+    Dependency checking on iOS does not work well - if the same dependency
+    exists in multiple files, it inserts them over and over and finally fails
+
+  <dependency id="edu.berkeley.eecs.emission.cordova.unifiedlogger"
+                url="https://github.com/e-mission/cordova-unified-logger.git"/>
+  <dependency id="edu.berkeley.eecs.emission.cordova.settings"
+                url="https://github.com/e-mission/cordova-connection-settings.git"/>
+  <dependency id="edu.berkeley.eecs.emission.cordova.serversync"
+                url="https://github.com/e-mission/cordova-server-sync.git"/>
+  -->
+
+  <platform name="android">
+
+    <config-file target="res/xml/config.xml" parent="/*">
+      <feature name="shakeDetect">
+        <param name="android-package" value="edu.berkeley.eecs.emission.cordova.shakeDetect.shakeNotifier"/>
+      </feature>
+    </config-file>
+
+    <config-file target="AndroidManifest.xml" parent="/manifest/application">
+        <receiver
+            android:name="edu.berkeley.eecs.emission.cordova.shakeDetect.shakeDetector""
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="local.detection.incident"></action>
+                <action android:name="local.detection.no_incident"></action>
+            </intent-filter>
+        </receiver>
+    </config-file>
+
+    <source-file src="src/android/shakeNotifier.java" target-dir="src/edu/berkeley/eecs/emission/cordova/shakeDetect"/>
+    <source-file src="src/android/shakeDetector.java" target-dir="src/edu/berkeley/eecs/emission/cordova/shakeDetect"/>
+    <resource-file src="res/android/statemachine.xml" target="res/values/statemachine.xml" />
+  </platform>
+
+  <platform name="ios">
+    
+    <config-file target="config.xml" parent="/*">
+      <feature name="TransitionNotification">
+        <param name="ios-package" value="shakeDetector" />
+      </feature>
+    </config-file>
+
+    <header-file src="src/ios/BEMShakeNotifier.h"/i>
+    <source-file src="src/ios/BEMShakeNotifier.m"/>
+  </platform>
+</plugin>
