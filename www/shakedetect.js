@@ -18,6 +18,7 @@ var exec = require("cordova/exec")
 var TransitionNotification = {
     INCIDENT: 'incident_detected',
     NO_INCIDENT: 'incident_not_detected',
+    POTENTIAL_INCIDENT: 'potential_incident',
 
     addEventListener: function(eventName, notifyOptions) {
         return new Promise(function(resolve, reject) {
@@ -51,4 +52,4 @@ var TransitionNotification = {
     }
 }
 
-module.exports = TransitionNotification;
+module.exports = ShakeDetect;

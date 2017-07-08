@@ -1,26 +1,28 @@
-package edu.berkeley.eecs.emission.cordova.shakeDetect;
+package edu.berkeley.eecs.emission.cordova.shakedetect;
 
+/**
+ * Created by Felipe Arias
+ */
+        import android.annotation.TargetApi;
+        import android.content.BroadcastReceiver;
+        import android.content.Context;
+        import android.content.Intent;
+        import android.content.IntentFilter;
+        import android.os.Build;
+        import android.os.Bundle;
+        import android.support.v4.content.LocalBroadcastManager;
+        import android.webkit.ValueCallback;
 
-import android.annotation.TargetApi;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.Build;
-import android.os.Bundle;
-import android.support.v4.content.LocalBroadcastManager;
-import android.webkit.ValueCallback;
+        import org.apache.cordova.CordovaPlugin;
+        import org.apache.cordova.CallbackContext;
 
-import org.apache.cordova.CordovaPlugin;
-import org.apache.cordova.CallbackContext;
+        import org.json.JSONArray;
+        import org.json.JSONException;
+        import org.json.JSONObject;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import edu.berkeley.eecs.emission.BuildConfig;
-import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
-import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
+        import edu.berkeley.eecs.emission.BuildConfig;
+        import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
+        import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
 /**
  * This class echoes a string called from JavaScript.
@@ -36,11 +38,8 @@ public class ShakeNotifier extends CordovaPlugin {
     private static final String CONFIG_LIST_KEY = "config_list";
     private static final String MUTED_LIST_KEY = "muted_list";
     private static final String ID = "id";
+    private static final String CUSTOM_SHAKE = "custom_shake";
 
-    java.util.Map<String,BroadcastReceiver> receiverMap =
-                    new java.util.HashMap<String,BroadcastReceiver>(10);
-
-    @Override
     public Object onMessage(String id, Object data) {
         Log.d(cordova.getActivity(), TAG, "Received onMessage with id = "+id+" and data = "+data);
         return Boolean.TRUE;
@@ -48,7 +47,7 @@ public class ShakeNotifier extends CordovaPlugin {
 
     private int findEntryWithId(JSONArray array, long id) throws JSONException {
         for (int i = 0; i < array.length(); i++) {
-           JSONObject currCheckedObject = array.getJSONObject(i);
+            JSONObject currCheckedObject = array.getJSONObject(i);
             if (currCheckedObject.getLong(ID) == id) {
                 return i;
             }
@@ -73,51 +72,51 @@ public class ShakeNotifier extends CordovaPlugin {
 
     private void addOrReplaceEntry(Context ctxt, String eventName,
                                    JSONObject localNotifyConfig, String listName) throws JSONException {
-            JSONObject configWrapper = UserCacheFactory.getUserCache(ctxt).getLocalStorage(eventName, false);
-            JSONArray currList;
+        JSONObject configWrapper = UserCacheFactory.getUserCache(ctxt).getLocalStorage(eventName, false);
+        JSONArray currList;
 
-            if (configWrapper == null) {
-                configWrapper = new JSONObject();
-                currList = new JSONArray();
+        if (configWrapper == null) {
+            configWrapper = new JSONObject();
+            currList = new JSONArray();
             configWrapper.put(listName, currList);
-                            } else {
+        } else {
             currList = configWrapper.optJSONArray(listName);
             if (currList == null) {
                 currList = new JSONArray();
                 configWrapper.put(listName, currList);
             }
-                            }
+        }
 
-            if(BuildConfig.DEBUG) {
+        if(BuildConfig.DEBUG) {
             if (configWrapper == null || currList == null &&
                     configWrapper.getJSONArray(listName) != currList) {
                 throw new RuntimeException("configWrapper = "+configWrapper+" currList = "+currList);
             }
-                        }
+        }
 
-            int existingIndex = findEntryWithId(currList, localNotifyConfig.getLong(ID));
+        int existingIndex = findEntryWithId(currList, localNotifyConfig.getLong(ID));
 
-            boolean modified = true;
-            if (existingIndex == -1) {
-                Log.d(ctxt, TAG, "new configuration, adding object with id "+localNotifyConfig.getLong(ID));
-                currList.put(localNotifyConfig);
+        boolean modified = true;
+        if (existingIndex == -1) {
+            Log.d(ctxt, TAG, "new configuration, adding object with id "+localNotifyConfig.getLong(ID));
+            currList.put(localNotifyConfig);
+        } else {
+            if (localNotifyConfig.equals(currList.getJSONObject(existingIndex))) {
+                Log.d(ctxt, TAG, "configuration unchanged, skipping list modify");
+                modified = false;
             } else {
-                if (localNotifyConfig.equals(currList.getJSONObject(existingIndex))) {
-                    Log.d(ctxt, TAG, "configuration unchanged, skipping list modify");
-                    modified = false;
-                } else {
-                    Log.d(ctxt, TAG, "configuration changed, changing object at index "+existingIndex);
-                    currList.put(existingIndex, localNotifyConfig);
-                }
+                Log.d(ctxt, TAG, "configuration changed, changing object at index "+existingIndex);
+                currList.put(existingIndex, localNotifyConfig);
             }
+        }
 
-            if (modified) {
-                UserCacheFactory.getUserCache(ctxt).putLocalStorage(eventName, configWrapper);
-            }
+        if (modified) {
+            UserCacheFactory.getUserCache(ctxt).putLocalStorage(eventName, configWrapper);
+        }
     }
 
     private void removeEntry(Context ctxt, String eventName,
-                                   JSONObject localNotifyConfig, String listName) throws JSONException {
+                             JSONObject localNotifyConfig, String listName) throws JSONException {
         JSONObject configWrapper = UserCacheFactory.getUserCache(ctxt).getLocalStorage(eventName, false);
 
         if (configWrapper != null) { // There is an existing entry for this event
@@ -138,9 +137,9 @@ public class ShakeNotifier extends CordovaPlugin {
                     // but that places additional (unnecessary) burden on the user.
                     // So let's treat them separately for now and fix later if it is a problem
                     if (listName.equals(CONFIG_LIST_KEY)) {
-                    Log.d(ctxt, TAG, "list size is now, zero, removing entry for event "+eventName);
-                    UserCacheFactory.getUserCache(ctxt).removeLocalStorage(eventName);
-                } else {
+                        Log.d(ctxt, TAG, "list size is now, zero, removing entry for event "+eventName);
+                        UserCacheFactory.getUserCache(ctxt).removeLocalStorage(eventName);
+                    } else {
                         if (BuildConfig.DEBUG) {
                             if (!listName.equals(MUTED_LIST_KEY)) {
                                 throw new RuntimeException("listName = "+listName+" expected "+MUTED_LIST_KEY);
@@ -177,7 +176,7 @@ public class ShakeNotifier extends CordovaPlugin {
             if( eventName==null || eventName.isEmpty() ) {
                 callbackContext.error(EVENTNAME_ERROR);
                 return false;
-        }
+            }
 
             final JSONObject localNotifyConfig = args.getJSONObject(1);
             if (localNotifyConfig == null || localNotifyConfig.length() == 0) {
@@ -218,7 +217,7 @@ public class ShakeNotifier extends CordovaPlugin {
             if (localNotifyConfig == null || localNotifyConfig.length() == 0) {
                 callbackContext.error(CONFIG_ERROR);
                 return false;
-                    }
+            }
 
             removeEntry(ctxt, eventName, localNotifyConfig, MUTED_LIST_KEY);
             callbackContext.success();
