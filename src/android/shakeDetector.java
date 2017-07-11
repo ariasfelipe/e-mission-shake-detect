@@ -48,7 +48,7 @@ package edu.berkeley.eecs.emission.cordova.shakedetect;
         import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
         import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 
-public class ShakeDetector extends Service implements SensorEventListener{
+public class shakeDetector extends Service implements SensorEventListener{
     private SensorManager sensorManager;
     private Sensor accelerometer;
     private Sensor gyroscope;

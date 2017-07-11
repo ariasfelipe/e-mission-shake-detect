@@ -6,30 +6,30 @@ angular.module('emission.main.control.sdetect', [])
     var CONFIG_LIST = "config_list";
     var MUTED_LIST = "muted_list";
     ctnh.incident_list = [
-        "incident_detected", "incident_not_detected"
+        "potential_incident"
     ];
     ctnh.new_configList = [];
-    ctnh.transition2configList = [];
-    ctnh.mergedTransitionNotifyEnableList = [];
+    ctnh.incident2configList = [];
+    ctnh.mergedShakeDetectEnableList = [];
     ctnh.settingsPopup = {};
 
     /* 
      * Functions to read and format values for display
      */
 
-    ctnh.getTNotifySettings = function() {
-        var promiseList = ctnh.transition_name_list.map(function(tn) {
-            return ctnh.getConfigForTransition(tn, true);
+    ctnh.getSDetecttSettings = function() {
+        var promiseList = ctnh.incident_list.map(function(tn) {
+            return ctnh.getConfigForIncident(tn, true);
         });
         return Promise.all(promiseList).then(function(resultList){
-            ctnh.transition2configList = resultList;
+            ctnh.incident2configList = resultList;
             var notifyEnableLists = resultList.filter(non_null).map(ctnh.config2notifyList);
-            ctnh.mergedTransitionNotifyEnableList = notifyEnableLists.reduce(
+            ctnh.mergedShakeDetectEnableList = notifyEnableLists.reduce(
                 function(acc, val) {
                 return acc.concat(val);
             });
             // return mergedTransitionNotifyEnable.map(ctnh.formatConfigForDisplay);
-            return ctnh.mergedTransitionNotifyEnableList;
+            return ctnh.mergedShakeDetectEnableList;
         })
     };
 
@@ -39,7 +39,7 @@ angular.module('emission.main.control.sdetect', [])
 
     /*
      * Output of this function is a map of the form:
-     * { transitionName: "trip_ended",
+     * { incidentName: "trip_ended",
          notifyOptions: {
             id: "737678",
             title: "Trip just ended",
@@ -57,8 +57,8 @@ angular.module('emission.main.control.sdetect', [])
         });
         var retVal = configList.map(function(config, i) {
             return {
-                transitionName: configWithMetadata.metadata.key,
-                notifyOptions: config,
+                incidentName: configWithMetadata.metadata.key,
+                incidentOptions: config,
                 enabled: enabledList[i]
             };
         });
@@ -83,8 +83,8 @@ angular.module('emission.main.control.sdetect', [])
      * Currently unused - we're displaying a real template, not just key-value pairs
      */
     ctnh.formatConfigForDisplay = function(tnce) {
-        return {'key': tnce.transitionName + " "+tnce.notifyOptions.id +
-                " "+tnce.notifyOptions.title, 'val': tnce.enabled};
+        return {'key': tnce.incidentName + " "+tnce.incidentOptions.id +
+                " "+tnce.incidentOptions.title, 'val': tnce.enabled};
     }
 
     /* 
@@ -101,7 +101,7 @@ angular.module('emission.main.control.sdetect', [])
     }
 
     ctnh.editConfig = function($event) {
-        ctnh.editedDisplayConfig = angular.copy(ctnh.mergedTransitionNotifyEnableList);
+        ctnh.editedDisplayConfig = angular.copy(ctnh.mergedShakeDetectEnableList);
         ctnh.toggledSet = new Set();
         var popover_scope = getPopoverScope();
         popover_scope.display_config = ctnh.editedDisplayConfig;
@@ -124,12 +124,12 @@ angular.module('emission.main.control.sdetect', [])
         var promiseList = toggledArray.map(function(currConfigWrapper) {
             // TODO: I think we can use apply here since these are
             // basically the fields.
-            return ctnh.setEnabled(currConfigWrapper.transitionName, 
-                currConfigWrapper.notifyOptions, currConfigWrapper.enabled);
+            return ctnh.setEnabled(currConfigWrapper.incidentName, 
+                currConfigWrapper.incidentOptions, currConfigWrapper.enabled);
         });
         Promise.all(promiseList).then(function(resultList) {
             // reset temporary state after all promises are resolved.
-            ctnh.mergedTransitionNotifyEnableList = ctnh.editedDisplayConfig;
+            ctnh.mergedShakeDetectEnableList = ctnh.editedDisplayConfig;
             ctnh.toggledSet = [];
             $rootScope.$broadcast('control.update.complete', 'collection config');
         }).catch(function(error) {
@@ -150,18 +150,8 @@ angular.module('emission.main.control.sdetect', [])
     };
 
     ctnh.forceState = function() {
-        var forceStateActions = [{text: "Initialize",
-                                  transition: "INITIALIZE"},
-                                 {text: 'Start trip',
-                                  transition: "EXITED_GEOFENCE"},
-                                 {text: 'End trip',
-                                  transition: "STOPPED_MOVING"},
-                                 {text: 'Visit ended',
-                                  transition: "VISIT_ENDED"},
-                                 {text: 'Visit started',
-                                  transition: "VISIT_STARTED"},
-                                 {text: 'Remote push',
-                                  transition: "RECEIVED_SILENT_PUSH"}];
+        var forceStateActions = [{text: "Shake Detected",
+                                  transition: "INITIALIZE"}];
         $ionicActionSheet.show({
             buttons: forceStateActions,
             titleText: "Force state",
@@ -239,15 +229,15 @@ angular.module('emission.main.control.sdetect', [])
      * BEGIN: Simple read/write wrappers
      */
 
-    ctnh.getConfigForTransition = function(transitionName, withMetadata) {
-      return window.cordova.plugins.BEMUserCache.getLocalStorage(transitionName, withMetadata);
+    ctnh.getConfigForIncident = function(incidentName, withMetadata) {
+      return window.cordova.plugins.BEMUserCache.getLocalStorage(incidentName, withMetadata);
     };
 
-    ctnh.setEnabled = function(transitionName, configData, enableState) {
+    ctnh.setEnabled = function(incidentName, configData, enableState) {
       if (enableState == true) {
-        return window.cordova.plugins.BEMTransitionNotification.enableEventListener(transitionName, configData);
+        return window.cordova.plugins.BEMShakeNotification.enableEventListener(incidentName, configData);
       } else {
-        return window.cordova.plugins.BEMTransitionNotification.disableEventListener(transitionName, configData);
+        return window.cordova.plugins.BEMShakeNotification.disableEventListener(incidentName, configData);
       }
     };
 
