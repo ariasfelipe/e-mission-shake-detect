@@ -1,19 +1,10 @@
-
 package edu.berkeley.eecs.emission.cordova.shakedetect;
 
 /**
  * Created by Felipe Arias
  */
-        import android.annotation.TargetApi;
-        import android.content.BroadcastReceiver;
-        import android.content.IntentFilter;
-        import android.os.Build;
-        import android.os.Bundle;
 
-        import org.apache.cordova.CordovaPlugin;
-        import org.apache.cordova.CallbackContext;
-
-        import org.json.JSONArray;
+import org.json.JSONArray;
         import org.json.JSONException;
         import org.json.JSONObject;
 
@@ -27,12 +18,8 @@ package edu.berkeley.eecs.emission.cordova.shakedetect;
 /*
  * Importing dependencies from the logger plugin
  */
-        import edu.berkeley.eecs.emission.BuildConfig;
-        import edu.berkeley.eecs.emission.R;
-        import edu.berkeley.eecs.emission.cordova.shakedetect.ShakeNotifier;
-        import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
-        import edu.berkeley.eecs.emission.cordova.usercache.UserCache;
-        import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
+import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
+import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
         import android.app.Service;
         import android.content.Context;
@@ -43,10 +30,6 @@ package edu.berkeley.eecs.emission.cordova.shakedetect;
         import android.hardware.SensorManager;
         import android.os.Handler;
         import android.os.IBinder;
-
-        import edu.berkeley.eecs.emission.cordova.tracker.Constants;
-        import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
-        import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 
 public class shakeDetector extends Service implements SensorEventListener{
     private SensorManager sensorManager;
@@ -59,10 +42,6 @@ public class shakeDetector extends Service implements SensorEventListener{
     private float lastAcceleration;
     private long lastUpdated;
 
-    private static final String POS_INCIDENT = "possible_incident";
-    private static final String INCIDENT = "incident";
-    private static final String NO_INCIDENT = "no_incident";
-
     private static final String CONFIG_LIST_KEY = "config_list";
     private static final String MUTED_LIST_KEY = "muted_list";
     private static final String ID = "id";
@@ -74,14 +53,29 @@ public class shakeDetector extends Service implements SensorEventListener{
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId){
+
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL, new Handler());
-        gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        sensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_NORMAL, new Handler());
-        linearAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-        sensorManager.registerListener(this, linearAccelerometer, SensorManager.SENSOR_DELAY_NORMAL, new Handler());
+
+        if(sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null)
+        {
+            gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+            sensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_NORMAL, new Handler());
+        }
+        else if(sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) != null)
+        {
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL, new Handler());
+            linearAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+        }
+        else if(sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) != null) {
+            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            sensorManager.registerListener(this, linearAccelerometer, SensorManager.SENSOR_DELAY_NORMAL, new Handler());
+        }
         return START_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        sensorManager.unregisterListener(this);
     }
 
     @Override
@@ -120,7 +114,7 @@ public class shakeDetector extends Service implements SensorEventListener{
                     NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, AccTag1);
                     //Log.i(this, AccTag1, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration) + ",");
                     notifyEvent(this, AccTag1, new JSONObject());
-		        }
+                }
                 */
 
                 acceleration2 = acceleration2 * 0.85f + (currAcceleration - lastAcceleration);
@@ -255,4 +249,3 @@ public class shakeDetector extends Service implements SensorEventListener{
         return -1;
     }
 }
-

@@ -2,34 +2,33 @@ angular.module('emission.main.control.sdetect', [])
 .factory("ControlShakeDetectHelper", function($window, 
         $ionicActionSheet, $ionicPopup, $ionicPopover, $rootScope) {
 
-    var ctnh = {};
+    var csdh = {};
     var CONFIG_LIST = "config_list";
     var MUTED_LIST = "muted_list";
-    ctnh.incident_list = [
+    csdh.incident_list = [
         "potential_incident"
     ];
-    ctnh.new_configList = [];
-    ctnh.incident2configList = [];
-    ctnh.mergedShakeDetectEnableList = [];
-    ctnh.settingsPopup = {};
+    csdh.new_configList = [];
+    csdh.incident2configList = [];
+    csdh.mergedShakeDetectEnableList = [];
+    csdh.settingsPopup = {};
 
     /* 
      * Functions to read and format values for display
      */
 
-    ctnh.getSDetecttSettings = function() {
-        var promiseList = ctnh.incident_list.map(function(tn) {
-            return ctnh.getConfigForIncident(tn, true);
+    csdh.getSDetecttSettings = function() {
+        var promiseList = csdh.incident_list.map(function(tn) {
+            return csdh.getConfigForIncident(tn, true);
         });
         return Promise.all(promiseList).then(function(resultList){
-            ctnh.incident2configList = resultList;
-            var notifyEnableLists = resultList.filter(non_null).map(ctnh.config2notifyList);
-            ctnh.mergedShakeDetectEnableList = notifyEnableLists.reduce(
+            csdh.incident2configList = resultList;
+            var notifyEnableLists = resultList.filter(non_null).map(csdh.config2notifyList);
+            csdh.mergedShakeDetectEnableList = notifyEnableLists.reduce(
                 function(acc, val) {
                 return acc.concat(val);
             });
-            // return mergedTransitionNotifyEnable.map(ctnh.formatConfigForDisplay);
-            return ctnh.mergedShakeDetectEnableList;
+            return csdh.mergedShakeDetectEnableList;
         })
     };
 
@@ -49,7 +48,7 @@ angular.module('emission.main.control.sdetect', [])
      * }
      */
 
-    ctnh.config2notifyList = function(configWithMetadata) {
+    csdh.config2notifyList = function(configWithMetadata) {
         var configList = configWithMetadata.data[CONFIG_LIST];
         var mutedList = configWithMetadata.data[MUTED_LIST];
         var enabledList = configList.map(function(config, i) {
@@ -82,7 +81,7 @@ angular.module('emission.main.control.sdetect', [])
     /*
      * Currently unused - we're displaying a real template, not just key-value pairs
      */
-    ctnh.formatConfigForDisplay = function(tnce) {
+    csdh.formatConfigForDisplay = function(tnce) {
         return {'key': tnce.incidentName + " "+tnce.incidentOptions.id +
                 " "+tnce.incidentOptions.title, 'val': tnce.enabled};
     }
@@ -93,63 +92,63 @@ angular.module('emission.main.control.sdetect', [])
 
     var getPopoverScope = function() {
         var new_scope = $rootScope.$new();
-        new_scope.saveAndReload = ctnh.saveAndReload;
+        new_scope.saveAndReload = csdh.saveAndReload;
         new_scope.isIOS = ionic.Platform.isIOS;
         new_scope.isAndroid = ionic.Platform.isAndroid;
-        new_scope.toggleEnable = ctnh.toggleEnable;
+        new_scope.toggleEnable = csdh.toggleEnable;
         return new_scope;
     }
 
-    ctnh.editConfig = function($event) {
-        ctnh.editedDisplayConfig = angular.copy(ctnh.mergedShakeDetectEnableList);
-        ctnh.toggledSet = new Set();
+    csdh.editConfig = function($event) {
+        csdh.editedDisplayConfig = angular.copy(csdh.mergedShakeDetectEnableList);
+        csdh.toggledSet = new Set();
         var popover_scope = getPopoverScope();
-        popover_scope.display_config = ctnh.editedDisplayConfig;
+        popover_scope.display_config = csdh.editedDisplayConfig;
         $ionicPopover.fromTemplateUrl('templates/control/main-transition-notify-settings.html', {
             scope: popover_scope
         }).then(function(popover) {
-            ctnh.settingsPopup = popover;
-            console.log("settings popup = "+ctnh.settingsPopup);
-            ctnh.settingsPopup.show($event);
+            csdh.settingsPopup = popover;
+            console.log("settings popup = "+csdh.settingsPopup);
+            csdh.settingsPopup.show($event);
         });
-        return ctnh.new_config;
+        return csdh.new_config;
     }
 
-    ctnh.saveAndReload = function() {
-        console.log("new config = "+ctnh.editedDisplayConfig);
+    csdh.saveAndReload = function() {
+        console.log("new config = "+csdh.editedDisplayConfig);
         var toggledArray = [];
-        ctnh.toggledSet.forEach(function(v) {
+        csdh.toggledSet.forEach(function(v) {
             toggledArray.push(v);
         });
         var promiseList = toggledArray.map(function(currConfigWrapper) {
             // TODO: I think we can use apply here since these are
             // basically the fields.
-            return ctnh.setEnabled(currConfigWrapper.incidentName, 
+            return csdh.setEnabled(currConfigWrapper.incidentName, 
                 currConfigWrapper.incidentOptions, currConfigWrapper.enabled);
         });
         Promise.all(promiseList).then(function(resultList) {
             // reset temporary state after all promises are resolved.
-            ctnh.mergedShakeDetectEnableList = ctnh.editedDisplayConfig;
-            ctnh.toggledSet = [];
+            csdh.mergedShakeDetectEnableList = csdh.editedDisplayConfig;
+            csdh.toggledSet = [];
             $rootScope.$broadcast('control.update.complete', 'collection config');
         }).catch(function(error) {
             console.log("setConfig Error: " + err);
         });
 
-        ctnh.settingsPopup.hide();
-        ctnh.settingsPopup.remove();
+        csdh.settingsPopup.hide();
+        csdh.settingsPopup.remove();
     };
 
     /* 
      * Edit helpers for values that selected from actionSheets
      */
 
-    ctnh.toggleEnable = function(entry) {
+    csdh.toggleEnable = function(entry) {
         console.log(JSON.stringify(entry));
-        ctnh.toggledSet.add(entry);
+        csdh.toggledSet.add(entry);
     };
 
-    ctnh.forceState = function() {
+    csdh.forceState = function() {
         var forceStateActions = [{text: "Shake Detected",
                                   transition: "INITIALIZE"}];
         $ionicActionSheet.show({
@@ -157,14 +156,14 @@ angular.module('emission.main.control.sdetect', [])
             titleText: "Force state",
             cancelText: "Cancel",
             buttonClicked: function(index, button) {
-                ctnh.forceTransition(button.transition);
+                csdh.forceTransition(button.transition);
                 return true;
             }
         });
     };
 
-    ctnh.forceTransition = function(transition) {
-        ctnh.forceTransitionWrapper(transition).then(function(result) {
+    csdh.forceTransition = function(transition) {
+        csdh.forceTransitionWrapper(transition).then(function(result) {
             $rootScope.$broadcast('control.update.complete', 'forceTransition');
             $ionicPopup.alert({template: 'success -> '+result});
         }, function(error) {
@@ -179,16 +178,16 @@ angular.module('emission.main.control.sdetect', [])
      */
 
     var accuracy2String = function() {
-        var accuracy = ctnh.config.accuracy;
-        for (var k in ctnh.accuracyOptions) {
-            if (ctnh.accuracyOptions[k] == accuracy) {
+        var accuracy = csdh.config.accuracy;
+        for (var k in csdh.accuracyOptions) {
+            if (csdh.accuracyOptions[k] == accuracy) {
                 return k;
             }
         }
     }
 
-    ctnh.isMediumAccuracy = function() {
-        if (ctnh.config == null) {
+    csdh.isMediumAccuracy = function() {
+        if (csdh.config == null) {
             return undefined; // config not loaded when loading ui, set default as false
         } else {
             var v = accuracy2String();
@@ -202,22 +201,22 @@ angular.module('emission.main.control.sdetect', [])
         }
     }
 
-    ctnh.toggleLowAccuracy = function() {
-        ctnh.new_config = JSON.parse(JSON.stringify(ctnh.config));
-        if (ctnh.isMediumAccuracy()) {
+    csdh.toggleLowAccuracy = function() {
+        csdh.new_config = JSON.parse(JSON.stringify(csdh.config));
+        if (csdh.isMediumAccuracy()) {
             if (ionic.Platform.isIOS()) {
-                ctnh.new_config.accuracy = ctnh.accuracyOptions["kCLLocationAccuracyBest"];
+                csdh.new_config.accuracy = csdh.accuracyOptions["kCLLocationAccuracyBest"];
             } else if (ionic.Platform.isAndroid()) {
-                accuracy = ctnh.accuracyOptions["PRIORITY_HIGH_ACCURACY"];
+                accuracy = csdh.accuracyOptions["PRIORITY_HIGH_ACCURACY"];
             }
         } else {
             if (ionic.Platform.isIOS()) {
-                ctnh.new_config.accuracy = ctnh.accuracyOptions["kCLLocationAccuracyHundredMeters"];
+                csdh.new_config.accuracy = csdh.accuracyOptions["kCLLocationAccuracyHundredMeters"];
             } else if (ionic.Platform.isAndroid()) {
-                ctnh.new_config.accuracy = ctnh.accuracyOptions["PRIORITY_BALANCED_POWER_ACCURACY"];
+                csdh.new_config.accuracy = csdh.accuracyOptions["PRIORITY_BALANCED_POWER_ACCURACY"];
             }
         }
-        ctnh.setConfig(ctnh.new_config)
+        csdh.setConfig(csdh.new_config)
         .then(function(){
             console.log("setConfig Sucess");
         }, function(err){
@@ -229,11 +228,11 @@ angular.module('emission.main.control.sdetect', [])
      * BEGIN: Simple read/write wrappers
      */
 
-    ctnh.getConfigForIncident = function(incidentName, withMetadata) {
+    csdh.getConfigForIncident = function(incidentName, withMetadata) {
       return window.cordova.plugins.BEMUserCache.getLocalStorage(incidentName, withMetadata);
     };
 
-    ctnh.setEnabled = function(incidentName, configData, enableState) {
+    csdh.setEnabled = function(incidentName, configData, enableState) {
       if (enableState == true) {
         return window.cordova.plugins.BEMShakeNotification.enableEventListener(incidentName, configData);
       } else {
@@ -241,5 +240,5 @@ angular.module('emission.main.control.sdetect', [])
       }
     };
 
-    return ctnh;
+    return csdh;
 });
