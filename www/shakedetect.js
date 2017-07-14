@@ -16,6 +16,10 @@ var exec = require("cordova/exec")
  */
 
 var ShakeNotification = {
+    TRIP_START: 'trip_started',
+    TRIP_END: 'trip_ended',
+    TRACKING_STARTED: 'tracking_started',
+    TRACKING_STOPPED: 'tracking_stopped',
     POTENTIAL_INCIDENT: 'potential_incident',
 
     addEventListener: function(eventName, notifyOptions) {
@@ -50,4 +54,4 @@ var ShakeNotification = {
     }
 }
 
-module.exports = ShakeDetect;
+module.exports = ShakeNotification;

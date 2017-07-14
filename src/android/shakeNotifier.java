@@ -3,15 +3,7 @@ package edu.berkeley.eecs.emission.cordova.shakedetect;
 /**
  * Created by Felipe Arias
  */
-        import android.annotation.TargetApi;
-        import android.content.BroadcastReceiver;
         import android.content.Context;
-        import android.content.Intent;
-        import android.content.IntentFilter;
-        import android.os.Build;
-        import android.os.Bundle;
-        import android.support.v4.content.LocalBroadcastManager;
-        import android.webkit.ValueCallback;
 
         import org.apache.cordova.CordovaPlugin;
         import org.apache.cordova.CallbackContext;
@@ -27,10 +19,10 @@ package edu.berkeley.eecs.emission.cordova.shakedetect;
 /**
  * This class echoes a string called from JavaScript.
  */
-public class ShakeNotifier extends CordovaPlugin {
+public class shakeNotifier extends CordovaPlugin {
 
     public static final String USERDATA = "userdata";
-    private static String TAG =  ShakeNotifier.class.getSimpleName();
+    private static String TAG =  shakeNotifier.class.getSimpleName();
 
     public static final String EVENTNAME_ERROR = "event name null or empty.";
     public static final String CONFIG_ERROR = "config name null or empty.";

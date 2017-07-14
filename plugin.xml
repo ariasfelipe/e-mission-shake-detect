@@ -5,7 +5,7 @@
 
   <name>ShakeDetection</name>
   <description>Shake detection for incident reporting </description>
-  <author>Felipe Arias (felipea2@illinois.edu))</author>
+  <author>Felipe Arias (felipea2@illinois.edu)</author>
   <license>Modified BSD license</license>
 
   <engines>
@@ -32,7 +32,7 @@
                 url="https://github.com/e-mission/cordova-server-sync.git"/>
   -->
 
-  <platform name="android">
+    <platform name="android">
 
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="ShakeDetection">
@@ -42,27 +42,21 @@
 
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
         <receiver
-            android:name="edu.berkeley.eecs.emission.cordova.shakeDetect.shakeDetector""
+            android:name="edu.berkeley.eecs.emission.cordova.shakedetect.shakeNotificationReceiver"
             android:enabled="true">
             <intent-filter>
-                <action android:name="local.detection.incident"></action>
+                <action android:name="local.transition.initialize"></action>
+                <action android:name="local.transition.exited_geofence"></action>
+                <action android:name="local.transition.stopped_moving"></action>
+                <action android:name="local.transition.stop_tracking"></action>
+                <action android:name="local.transition.start_tracking"></action>
             </intent-filter>
         </receiver>
+        <service android:exported="false" android:name="edu.berkeley.eecs.emission.cordova.shakedetect.shakeDetector"></service>
     </config-file>
 
-    <source-file src="src/android/shakeNotifier.java" target-dir="src/edu/berkeley/eecs/emission/cordova/shakedetect"/>
     <source-file src="src/android/shakeDetector.java" target-dir="src/edu/berkeley/eecs/emission/cordova/shakedetect"/>
-  </platform>
-
-  <platform name="ios">
-    
-    <config-file target="config.xml" parent="/*">
-      <feature name="Shake-Detection">
-        <param name="ios-package" value="shakeDetector" />
-      </feature>
-    </config-file>
-
-    <header-file src="src/ios/BEMShakeNotifier.h"/i>
-    <source-file src="src/ios/BEMShakeNotifier.m"/>
+    <source-file src="src/android/shakeNotificationReceiver.java" target-dir="src/edu/berkeley/eecs/emission/cordova/shakedetect"/>
+    <source-file src="src/android/shakeNotifier.java" target-dir="src/edu/berkeley/eecs/emission/cordova/shakedetect"/>
   </platform>
 </plugin>
