@@ -5,33 +5,36 @@ package edu.berkeley.eecs.emission.cordova.shakedetect;
  */
 
 import org.json.JSONArray;
-        import org.json.JSONException;
-        import org.json.JSONObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-/*
- * Importing dependencies from the notification plugin
- */
 
-        import de.appplant.cordova.plugin.localnotification.TriggerReceiver;
-        import de.appplant.cordova.plugin.notification.Manager;
+
+import de.appplant.cordova.plugin.localnotification.TriggerReceiver;
+import de.appplant.cordova.plugin.notification.Manager;
 
 /*
  * Importing dependencies from the logger plugin
  */
+import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
+import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
-        import android.app.Service;
-        import android.content.Context;
-        import android.content.Intent;
-        import android.hardware.Sensor;
-        import android.hardware.SensorEvent;
-        import android.hardware.SensorEventListener;
-        import android.hardware.SensorManager;
-        import android.os.Handler;
-        import android.os.IBinder;
+import android.app.Service;
+import android.content.Context;
+import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
 
-public class shakeDetector extends Service implements SensorEventListener{
+import java.util.Iterator;
+
+public class ShakeDetector extends Service implements SensorEventListener{
     private SensorManager sensorManager;
     private Sensor accelerometer;
     private Sensor gyroscope;
@@ -44,6 +47,7 @@ public class shakeDetector extends Service implements SensorEventListener{
 
     private static final String CONFIG_LIST_KEY = "config_list";
     private static final String MUTED_LIST_KEY = "muted_list";
+    private static final String POTENTIAL_INCIDENT = "potential_incident";
     private static final String ID = "id";
 
     @Override
@@ -56,19 +60,19 @@ public class shakeDetector extends Service implements SensorEventListener{
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
-        if(sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null)
+        if(sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null)
+        {
+            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL, new Handler());
+        }
+        else if(sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) != null) {
+            linearAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+            sensorManager.registerListener(this, linearAccelerometer, SensorManager.SENSOR_DELAY_NORMAL, new Handler());
+        }
+        else if(sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null)
         {
             gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
             sensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_NORMAL, new Handler());
-        }
-        else if(sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) != null)
-        {
-            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL, new Handler());
-            linearAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-        }
-        else if(sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) != null) {
-            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-            sensorManager.registerListener(this, linearAccelerometer, SensorManager.SENSOR_DELAY_NORMAL, new Handler());
         }
         return START_STICKY;
     }
@@ -86,7 +90,7 @@ public class shakeDetector extends Service implements SensorEventListener{
     public void onSensorChanged(SensorEvent event){
 
         long currTime = System.currentTimeMillis();
-        long deltaTime = currTime; //- lastUpdated;
+        long deltaTime = currTime; // - lastUpdated;
 
 
         //Only get readings if an "accident" has not occured within the past 0.5 seconds
@@ -106,43 +110,27 @@ public class shakeDetector extends Service implements SensorEventListener{
                 acceleration = acceleration * 0.95f + (currAcceleration - lastAcceleration);
                 String AccTag1 = "2Shake0.6A0.95-13-10";
 
-                Log.i(this, AccTag1, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration) + ",");
+                //Log.i(this, AccTag1, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration) + ",");
 
-                /*
                 if ((acceleration > 13f) && (Math.abs(xAcceleration) < 10)) {
                     lastUpdated = currTime;
-                    NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, AccTag1);
-                    //Log.i(this, AccTag1, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration) + ",");
-                    notifyEvent(this, AccTag1, new JSONObject());
+                    //NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, AccTag1);
+                    Log.i(this, AccTag1, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration) + ",");
+                    notifyEvent(this, POTENTIAL_INCIDENT, new JSONObject());
                 }
-                */
 
                 acceleration2 = acceleration2 * 0.85f + (currAcceleration - lastAcceleration);
                 String AccTag2 = "2Shake0.6A0.85-13-10";
 
-                Log.i(this, AccTag2, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration2) + ",");
+                //Log.i(this, AccTag2, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration2) + ",");
 
-/*
+
                 if ((acceleration > 13f) && (Math.abs(xAcceleration) < 10)) {
                     lastUpdated = currTime;
-                    NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, AccTag2);
-                    //Log.i(this, AccTag2, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration2) + ",");
-                }*/
-                notifyEvent(this, AccTag2, new JSONObject());
-            }
-            else if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
-                float xRotation = event.values[0];
-                String GyroTag = "2Gyro5";
-
-                Log.i(this, GyroTag, ","+String.valueOf(currTime)+"," + Float.toString(xRotation) + "," );
-
-                /*
-                if (xRotation > 5f) {
-                    lastUpdated = currTime;
-                    NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, GyroTag);
-                    //Log.i(this, GyroTag, "," + Float.toString(xRotation) + "," );
-                }*/
-                notifyEvent(this, GyroTag, new JSONObject());
+                    //NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, AccTag2);
+                    Log.i(this, AccTag2, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration2) + ",");
+                    notifyEvent(this, POTENTIAL_INCIDENT, new JSONObject());
+                }
             }
             else if(event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION){
                 float xAcceleration = event.values[0];
@@ -157,37 +145,52 @@ public class shakeDetector extends Service implements SensorEventListener{
 
                 acceleration = acceleration * 0.95f + (currAcceleration - lastAcceleration);
                 String LAccTag = "2Shake0.6LA0.95";
-                Log.i(this, LAccTag, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration) + ",");
+                //Log.i(this, LAccTag, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration) + ",");
 
-
-                /*
                 if ((acceleration > 13f) && (Math.abs(xAcceleration) < 10)) {
-                    //lastUpdated = currTime;
-                    NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, AccTag1);
-                    //Log.i(this, AccTag1, "," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration) + ",");
-                    notifyEvent(this, LAccTag, new JSONObject());
+                    lastUpdated = currTime;
+                    //NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, LAccTag);
+                    Log.i(this, LAccTag, "," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration) + ",");
+                    notifyEvent(this, POTENTIAL_INCIDENT, new JSONObject());
                 }
-                */
+
                 acceleration2 = acceleration2 * 0.85f + (currAcceleration - lastAcceleration);
                 String LAccTag2 = "2Shake0.6LA0.85";
 
-                Log.i(this, LAccTag2, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration2) + ",");
+                //Log.i(this, LAccTag2, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration2) + ",");
 
-
-                /*
                 if ((acceleration > 13f) && (Math.abs(xAcceleration) < 10)) {
-                    //lastUpdated = currTime;
-                    NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, AccTag2);
-                    notifyEvent(this, LAccTag2, new JSONObject());
-                    //Log.i(this, AccTag2, "," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration2) + ",");
+                    lastUpdated = currTime;
+                    //NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, LAccTag2);
+                    Log.i(this, LAccTag2, "," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration2) + ",");
+                    notifyEvent(this, POTENTIAL_INCIDENT, new JSONObject());
                 }
-                */
+
+            }
+            else if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
+                float xRotation = event.values[0];
+                float yRotation = event.values[1];
+                float zRotation = event.values[2];
+                String GyroTag = "2Gyro5";
+
+                //Log.i(this, GyroTag, ","+String.valueOf(currTime)+"," + Float.toString(xRotation) + "," );
+
+                if ((xRotation > 5f) && (yRotation < 5f) && (zRotation) < 5f) {
+                    lastUpdated = currTime;
+                    //NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, GyroTag);
+                    Log.i(this, GyroTag, "," + Float.toString(xRotation) + "," );
+                    notifyEvent(this, POTENTIAL_INCIDENT, new JSONObject());
+                }
             }
         }
     }
 
     public void notifyEvent(Context context, String eventName, JSONObject autogenData) {
-        String TAG = "shakeDetector";
+        String TAG = "ShakeDetector";
+        Intent shakeDetectionIntent = new Intent();
+        shakeDetectionIntent.setAction(eventName);
+        shakeDetectionIntent.putExtras(jsonToBundle(autogenData));
+        context.sendBroadcast(shakeDetectionIntent);
         Log.d(context, TAG, "Generating all notifications for generic "+eventName);
         try {
             JSONObject notifyConfigWrapper = UserCacheFactory.getUserCache(context).getLocalStorage(eventName, false);
@@ -248,4 +251,43 @@ public class shakeDetector extends Service implements SensorEventListener{
         }
         return -1;
     }
+
+        private Bundle jsonToBundle(JSONObject toConvert) {
+            Bundle bundle = new Bundle();
+
+            for (Iterator<String> it = toConvert.keys(); it.hasNext(); ) {
+                String key = it.next();
+                JSONArray arr = toConvert.optJSONArray(key);
+                Double num = toConvert.optDouble(key);
+                String str = toConvert.optString(key);
+
+                if (arr != null && arr.length() <= 0)
+                    bundle.putStringArray(key, new String[]{});
+
+                else if (arr != null && !Double.isNaN(arr.optDouble(0))) {
+                    double[] newarr = new double[arr.length()];
+                    for (int i=0; i<arr.length(); i++)
+                        newarr[i] = arr.optDouble(i);
+                    bundle.putDoubleArray(key, newarr);
+                }
+
+                else if (arr != null && arr.optString(0) != null) {
+                    String[] newarr = new String[arr.length()];
+                    for (int i=0; i<arr.length(); i++)
+                        newarr[i] = arr.optString(i);
+                    bundle.putStringArray(key, newarr);
+                }
+
+                else if (!num.isNaN())
+                    bundle.putDouble(key, num);
+
+                else if (str != null)
+                    bundle.putString(key, str);
+
+                else
+                    System.err.println("unable to transform json to bundle " + key);
+            }
+            return bundle;
+        }
+
 }

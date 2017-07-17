@@ -16,30 +16,26 @@ var exec = require("cordova/exec")
  */
 
 var ShakeNotification = {
-    TRIP_START: 'trip_started',
-    TRIP_END: 'trip_ended',
-    TRACKING_STARTED: 'tracking_started',
-    TRACKING_STOPPED: 'tracking_stopped',
     POTENTIAL_INCIDENT: 'potential_incident',
 
-    addEventListener: function(eventName, notifyOptions) {
+    addEventListener: function(eventName, incidentOptions) {
         return new Promise(function(resolve, reject) {
-            exec(resolve, reject, "ShakeNotification", "addEventListener", [eventName, notifyOptions]);
+            exec(resolve, reject, "ShakeNotification", "addEventListener", [eventName, incidentOptions]);
         });
     },
-    removeEventListener: function(eventName, notifyOptions) {
+    removeEventListener: function(eventName, incidentOptions) {
         return new Promise(function(resolve, reject) {
-            exec(resolve, reject, "ShakeNotification", "removeEventListener", [eventName, notifyOptions]);
+            exec(resolve, reject, "ShakeNotification", "removeEventListener", [eventName, incidentOptions]);
         });
     },
-    enableEventListener: function(eventName, notifyOptions) {
+    enableEventListener: function(eventName, incidentOptions) {
         return new Promise(function(resolve, reject) {
-            exec(resolve, reject, "ShakeNotification", "enableEventListener", [eventName, notifyOptions]);
+            exec(resolve, reject, "ShakeNotification", "enableEventListener", [eventName, incidentOptions]);
         });
     },
-    disableEventListener: function(eventName, notifyOptions) {
+    disableEventListener: function(eventName, incidentOptions) {
         return new Promise(function(resolve, reject) {
-            exec(resolve, reject, "ShakeNotification", "disableEventListener", [eventName, notifyOptions]);
+            exec(resolve, reject, "ShakeNotification", "disableEventListener", [eventName, incidentOptions]);
         });
     },
     /*

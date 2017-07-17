@@ -6,7 +6,7 @@ angular.module('emission.main.control.sdetect', [])
     var CONFIG_LIST = "config_list";
     var MUTED_LIST = "muted_list";
     csdh.incident_list = [
-        "trip_started", "trip_ended", "tracking_started", "tracking_stopped", "potential_incident"
+        "potential_incident"
     ];
     csdh.new_configList = [];
     csdh.incident2configList = [];
@@ -17,7 +17,7 @@ angular.module('emission.main.control.sdetect', [])
      * Functions to read and format values for display
      */
 
-    csdh.getSDetecttSettings = function() {
+    csdh.getSDetectSettings = function() {
         var promiseList = csdh.incident_list.map(function(tn) {
             return csdh.getConfigForIncident(tn, true);
         });
@@ -104,7 +104,7 @@ angular.module('emission.main.control.sdetect', [])
         csdh.toggledSet = new Set();
         var popover_scope = getPopoverScope();
         popover_scope.display_config = csdh.editedDisplayConfig;
-        $ionicPopover.fromTemplateUrl('templates/control/main-shake-dectect-settings.html', {
+        $ionicPopover.fromTemplateUrl('templates/control/main-shake-detect-settings.html', {
             scope: popover_scope
         }).then(function(popover) {
             csdh.settingsPopup = popover;
@@ -148,20 +148,8 @@ angular.module('emission.main.control.sdetect', [])
         csdh.toggledSet.add(entry);
     };
 
-    csdh..forceState = function() {
-        var forceStateActions = [{text: "Initialize",
-                                  transition: "INITIALIZE"},
-                                 {text: 'Start trip',
-                                  transition: "EXITED_GEOFENCE"},
-                                 {text: 'End trip',
-                                  transition: "STOPPED_MOVING"},
-                                 {text: 'Visit ended',
-                                  transition: "VISIT_ENDED"},
-                                 {text: 'Visit started',
-                                  transition: "VISIT_STARTED"},
-                                 {text: 'Remote push',
-                                  transition: "RECEIVED_SILENT_PUSH"},
-                                 {text: 'potential_incident',
+    csdh.forceState = function() {
+        var forceStateActions = [{text: 'potential_incident',
                                   transition: "POTENTIAL_INCIDENT"}];
         $ionicActionSheet.show({
             buttons: forceStateActions,

@@ -19,10 +19,10 @@ package edu.berkeley.eecs.emission.cordova.shakedetect;
 /**
  * This class echoes a string called from JavaScript.
  */
-public class shakeNotifier extends CordovaPlugin {
+public class ShakeNotifier extends CordovaPlugin {
 
     public static final String USERDATA = "userdata";
-    private static String TAG =  shakeNotifier.class.getSimpleName();
+    private static String TAG =  ShakeNotifier.class.getSimpleName();
 
     public static final String EVENTNAME_ERROR = "event name null or empty.";
     public static final String CONFIG_ERROR = "config name null or empty.";
