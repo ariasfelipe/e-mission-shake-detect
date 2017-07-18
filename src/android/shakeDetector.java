@@ -187,10 +187,7 @@ public class ShakeDetector extends Service implements SensorEventListener{
 
     public void notifyEvent(Context context, String eventName, JSONObject autogenData) {
         String TAG = "ShakeDetector";
-        Intent shakeDetectionIntent = new Intent();
-        shakeDetectionIntent.setAction(eventName);
-        shakeDetectionIntent.putExtras(jsonToBundle(autogenData));
-        context.sendBroadcast(shakeDetectionIntent);
+
         Log.d(context, TAG, "Generating all notifications for generic "+eventName);
         try {
             JSONObject notifyConfigWrapper = UserCacheFactory.getUserCache(context).getLocalStorage(eventName, false);
@@ -252,42 +249,5 @@ public class ShakeDetector extends Service implements SensorEventListener{
         return -1;
     }
 
-        private Bundle jsonToBundle(JSONObject toConvert) {
-            Bundle bundle = new Bundle();
-
-            for (Iterator<String> it = toConvert.keys(); it.hasNext(); ) {
-                String key = it.next();
-                JSONArray arr = toConvert.optJSONArray(key);
-                Double num = toConvert.optDouble(key);
-                String str = toConvert.optString(key);
-
-                if (arr != null && arr.length() <= 0)
-                    bundle.putStringArray(key, new String[]{});
-
-                else if (arr != null && !Double.isNaN(arr.optDouble(0))) {
-                    double[] newarr = new double[arr.length()];
-                    for (int i=0; i<arr.length(); i++)
-                        newarr[i] = arr.optDouble(i);
-                    bundle.putDoubleArray(key, newarr);
-                }
-
-                else if (arr != null && arr.optString(0) != null) {
-                    String[] newarr = new String[arr.length()];
-                    for (int i=0; i<arr.length(); i++)
-                        newarr[i] = arr.optString(i);
-                    bundle.putStringArray(key, newarr);
-                }
-
-                else if (!num.isNaN())
-                    bundle.putDouble(key, num);
-
-                else if (str != null)
-                    bundle.putString(key, str);
-
-                else
-                    System.err.println("unable to transform json to bundle " + key);
-            }
-            return bundle;
-        }
 
 }
