@@ -166,12 +166,14 @@ public class ShakeNotifier extends CordovaPlugin {
 
             final String eventName = args.getString(0);
             if( eventName==null || eventName.isEmpty() ) {
+                Log.d(ctxt, TAG, "addEventListener: eventname is empty or NULL");
                 callbackContext.error(EVENTNAME_ERROR);
                 return false;
             }
 
             final JSONObject localNotifyConfig = args.getJSONObject(1);
             if (localNotifyConfig == null || localNotifyConfig.length() == 0) {
+                Log.d(ctxt, TAG, "addEventListener: is NULL or has a lenght of 0");
                 callbackContext.error(CONFIG_ERROR);
                 return false;
             }

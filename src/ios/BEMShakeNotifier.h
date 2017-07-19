@@ -10,6 +10,7 @@
 
 #import <Cordova/CDV.h>
 
+CMMotionManager *motionManager;
 @interface BEMShakeNotifier : CDVPlugin
 
 @end

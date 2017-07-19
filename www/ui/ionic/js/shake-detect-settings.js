@@ -38,7 +38,7 @@ angular.module('emission.main.control.sdetect', [])
 
     /*
      * Output of this function is a map of the form:
-     * { incidentName: "trip_ended",
+     * { transitionName: "trip_ended",
          notifyOptions: {
             id: "737678",
             title: "Trip just ended",
@@ -56,8 +56,8 @@ angular.module('emission.main.control.sdetect', [])
         });
         var retVal = configList.map(function(config, i) {
             return {
-                incidentName: configWithMetadata.metadata.key,
-                incidentOptions: config,
+                transitionName: configWithMetadata.metadata.key,
+                notifyOptions: config,
                 enabled: enabledList[i]
             };
         });
@@ -82,8 +82,8 @@ angular.module('emission.main.control.sdetect', [])
      * Currently unused - we're displaying a real template, not just key-value pairs
      */
     csdh.formatConfigForDisplay = function(tnce) {
-        return {'key': tnce.incidentName + " "+tnce.incidentOptions.id +
-                " "+tnce.incidentOptions.title, 'val': tnce.enabled};
+        return {'key': tnce.transitionName + " "+tnce.notifyOptions.id +
+                " "+tnce.notifyOptions.title, 'val': tnce.enabled};
     }
 
     /* 
@@ -123,8 +123,8 @@ angular.module('emission.main.control.sdetect', [])
         var promiseList = toggledArray.map(function(currConfigWrapper) {
             // TODO: I think we can use apply here since these are
             // basically the fields.
-            return csdh.setEnabled(currConfigWrapper.incidentName, 
-                currConfigWrapper.incidentOptions, currConfigWrapper.enabled);
+            return csdh.setEnabled(currConfigWrapper.transitionName, 
+                currConfigWrapper.notifyOptions, currConfigWrapper.enabled);
         });
         Promise.all(promiseList).then(function(resultList) {
             // reset temporary state after all promises are resolved.
@@ -227,15 +227,15 @@ angular.module('emission.main.control.sdetect', [])
      * BEGIN: Simple read/write wrappers
      */
 
-    csdh.getConfigForIncident = function(incidentName, withMetadata) {
-      return window.cordova.plugins.BEMUserCache.getLocalStorage(incidentName, withMetadata);
+    csdh.getConfigForIncident = function(transitionName, withMetadata) {
+      return window.cordova.plugins.BEMUserCache.getLocalStorage(transitionName, withMetadata);
     };
 
-    csdh.setEnabled = function(incidentName, configData, enableState) {
+    csdh.setEnabled = function(transitionName, configData, enableState) {
       if (enableState == true) {
-        return window.cordova.plugins.BEMShakeNotification.enableEventListener(incidentName, configData);
+        return window.cordova.plugins.BEMShakeNotification.enableEventListener(transitionName, configData);
       } else {
-        return window.cordova.plugins.BEMShakeNotification.disableEventListener(incidentName, configData);
+        return window.cordova.plugins.BEMShakeNotification.disableEventListener(transitionName, configData);
       }
     };
 
