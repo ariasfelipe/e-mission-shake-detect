@@ -6,7 +6,9 @@
 //
 //
 #import <CoreMotion/CoreMotion.h>
+#import <math.h>
 #import <Foundation/Foundation.h>
+#import <QuartzCore/QuartzCore.h>
 #import "BEMShakeNotifier.h"
 #import "TripDiaryStateMachine.h"
 #import "APPLocalNotification.h"
@@ -15,6 +17,7 @@
 #import "LocalNotificationManager.h"
 #import "SimpleLocation.h"
 #import "Transition.h"
+
 
 #define TRIP_STARTED @"trip_started"
 #define TRIP_ENDED @"trip_ended"
@@ -338,7 +341,39 @@
 
 -(void)enableSensor{
     motionManager = [[CMMotionManager alloc] init];
-    if([motionManager isGyroAvailable]){
+    if([motionManager isAccelerometerAvailable]){
+        if([motionManager isAccelerometerActive] == NO){
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"DetectedShake"]
+                                                                    showUI:FALSE];
+            motionManager.accelerometerUpdateInterval = 0.1f;
+            __block double currentAcceleration = 0.0;
+            __block double acceleration = 0.0;
+            __block double lastUpdated = 0.0;
+            
+            double yAccelerationConst = 0.5;
+            [motionManager startAccelerometerUpdatesToQueue:[NSOperationQueue mainQueue] withHandler:^(CMAccelerometerData *data, NSError *error){
+                double currTime = CACurrentMediaTime();
+                if((currTime - lastUpdated) > 0.5){
+                    double lastAcceleration = currentAcceleration;
+                    currentAcceleration = sqrtf(data.acceleration.z*data.acceleration.z + data.acceleration.y*data.acceleration.y*yAccelerationConst*yAccelerationConst);
+                
+                    acceleration = acceleration*0.9f + (currentAcceleration - lastAcceleration);
+                
+                    if((acceleration > 5.0) && (fabs(data.acceleration.x) < 5.0)){
+                        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                                   @"DetectedIncident"]
+                                                           showUI:FALSE];
+                        lastUpdated = currTime;
+                        [self notifyEvent:POTENTIAL_INCIDENT data:NULL];
+                    }
+                }
+            }];
+            
+        }
+    }
+    //Gyroscope implementation
+    /*else if([motionManager isGyroAvailable]){
         if([motionManager isGyroActive] == NO){
             [motionManager setGyroUpdateInterval:1.0f / 10.0f];
             
@@ -353,11 +388,12 @@
                 }
             }];
         }
-    }
+    }*/
 }
 
 -(void)disableSensor{
-    [motionManager stopGyroUpdates];
+    //[motionManager stopGyroUpdates];
+    [motionManager stopAccelerometerUpdates];
 }
 
 @end

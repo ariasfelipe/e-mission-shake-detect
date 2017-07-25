@@ -116,7 +116,7 @@ public class ShakeDetector extends Service implements SensorEventListener{
                     lastUpdated = currTime;
                     //NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, AccTag1);
                     Log.i(this, AccTag1, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration) + ",");
-                    notifyEvent(this, POTENTIAL_INCIDENT, new JSONObject());
+                    notifyEvent(this, POTENTIAL_INCIDENT, null;
                 }
 
                 acceleration2 = acceleration2 * 0.85f + (currAcceleration - lastAcceleration);
@@ -129,7 +129,7 @@ public class ShakeDetector extends Service implements SensorEventListener{
                     lastUpdated = currTime;
                     //NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, AccTag2);
                     Log.i(this, AccTag2, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration2) + ",");
-                    notifyEvent(this, POTENTIAL_INCIDENT, new JSONObject());
+                    notifyEvent(this, POTENTIAL_INCIDENT, null;
                 }
             }
             else if(event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION){
@@ -151,7 +151,7 @@ public class ShakeDetector extends Service implements SensorEventListener{
                     lastUpdated = currTime;
                     //NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, LAccTag);
                     Log.i(this, LAccTag, "," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration) + ",");
-                    notifyEvent(this, POTENTIAL_INCIDENT, new JSONObject());
+                    notifyEvent(this, POTENTIAL_INCIDENT, null;
                 }
 
                 acceleration2 = acceleration2 * 0.85f + (currAcceleration - lastAcceleration);
@@ -163,7 +163,7 @@ public class ShakeDetector extends Service implements SensorEventListener{
                     lastUpdated = currTime;
                     //NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, LAccTag2);
                     Log.i(this, LAccTag2, "," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration2) + ",");
-                    notifyEvent(this, POTENTIAL_INCIDENT, new JSONObject());
+                    notifyEvent(this, POTENTIAL_INCIDENT, null;
                 }
 
             }
@@ -179,7 +179,7 @@ public class ShakeDetector extends Service implements SensorEventListener{
                     lastUpdated = currTime;
                     //NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, GyroTag);
                     Log.i(this, GyroTag, "," + Float.toString(xRotation) + "," );
-                    notifyEvent(this, POTENTIAL_INCIDENT, new JSONObject());
+                    notifyEvent(this, POTENTIAL_INCIDENT, null;
                 }
             }
         }

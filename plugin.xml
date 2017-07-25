@@ -3,7 +3,7 @@
         id="edu.berkeley.eecs.emission.cordova.shakedetect"
         version="1.0.0">
 
-  <name>ShakeDetection</name>
+  <name>ShakeNotification</name>
   <description>Shake detection for incident reporting </description>
   <author>Felipe Arias (felipea2@illinois.edu)</author>
   <license>Modified BSD license</license>
@@ -35,7 +35,7 @@
     <platform name="android">
 
     <config-file target="res/xml/config.xml" parent="/*">
-      <feature name="ShakeDetection">
+      <feature name="ShakeNotification">
         <param name="android-package" value="edu.berkeley.eecs.emission.cordova.shakedetect.ShakeNotifier"/>
       </feature>
     </config-file>
@@ -63,7 +63,7 @@
   <platform name="ios">
     
     <config-file target="config.xml" parent="/*">
-      <feature name="ShakeDetection">
+      <feature name="ShakeNotification">
         <param name="ios-package" value="BEMShakeNotifier" />
       </feature>
     </config-file>
