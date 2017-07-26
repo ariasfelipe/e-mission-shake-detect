@@ -58,6 +58,11 @@
     <source-file src="src/android/ShakeDetector.java" target-dir="src/edu/berkeley/eecs/emission/cordova/shakedetect"/>
     <source-file src="src/android/ShakeNotificationReceiver.java" target-dir="src/edu/berkeley/eecs/emission/cordova/shakedetect"/>
     <source-file src="src/android/ShakeNotifier.java" target-dir="src/edu/berkeley/eecs/emission/cordova/shakedetect"/>
+    <source-file src="src/android/wrapper/AccelerometerReading.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
+    <source-file src="src/android/wrapper/PotentialIncident.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
+
+
+
   </platform>
 
   <platform name="ios">
@@ -69,7 +74,13 @@
     </config-file>
 
     <header-file src="src/ios/BEMShakeNotifier.h"/>
+    <header-file src="src/ios/Wrapper/AccelerometerReading.h" target-dir="Wrapper"/>
+    <header-file src="src/ios/Wrapper/PotentialIncident.h" target-dir="Wrapper"/>
+
     <source-file src="src/ios/BEMShakeNotifier.m"/>
+    <source-file src="src/ios/Wrapper/AccelerometerReading.m" target-dir="Wrapper"/>
+    <source-file src="src/ios/Wrapper/PotentialIncident.m" target-dir="Wrapper"/>
+
   </platform>
 
 </plugin>

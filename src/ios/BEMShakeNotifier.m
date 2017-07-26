@@ -16,7 +16,9 @@
 #import "DataUtils.h"
 #import "LocalNotificationManager.h"
 #import "SimpleLocation.h"
+#import "PotentialIncident.h"
 #import "Transition.h"
+#import "MotionActivity.h"
 
 
 #define TRIP_STARTED @"trip_started"
@@ -354,7 +356,7 @@
             double yAccelerationConst = 0.5;
             [motionManager startAccelerometerUpdatesToQueue:[NSOperationQueue mainQueue] withHandler:^(CMAccelerometerData *data, NSError *error){
                 double currTime = CACurrentMediaTime();
-                if((currTime - lastUpdated) > 0.5){
+                if((currTime - lastUpdated) >= 1.0){
                     double lastAcceleration = currentAcceleration;
                     currentAcceleration = sqrtf(data.acceleration.z*data.acceleration.z + data.acceleration.y*data.acceleration.y*yAccelerationConst*yAccelerationConst);
                 
@@ -364,8 +366,38 @@
                         [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                                    @"DetectedIncident"]
                                                            showUI:FALSE];
+                        
+                        
                         lastUpdated = currTime;
                         [self notifyEvent:POTENTIAL_INCIDENT data:NULL];
+                        NSArray* lastLocation = [[BuiltinUserCache database] getLastSensorData:@"key.usercache.filtered_location" nEntries:1 wrapperClass:[SimpleLocation class]];
+                        
+                        if ([lastLocation count] == 0){
+                            return;
+                        }
+                        
+                        NSArray* lastActivity = [[BuiltinUserCache database] getLastSensorData:@"key.usercache.activity" nEntries:1 wrapperClass:[MotionActivity class]];
+                        
+                        if ([lastActivity count] == 0){
+        
+                            SimpleLocation *lastLoc = ((SimpleLocation*)lastLocation.firstObject);
+                        
+                            PotentialIncident* potIncident = [[PotentialIncident alloc]initWithLocationAccel: lastLoc xVal:data.acceleration.x yVal:data.acceleration.y zVal:data.acceleration.z];
+                        
+                            [[BuiltinUserCache database] putSensorData:@"key.usercache.location" value:potIncident];
+                        }
+                        else{
+                            SimpleLocation *lastAc = ((SimpleLocation*)lastActivity.firstObject);
+                            
+                            SimpleLocation *lastLoc = ((SimpleLocation*)lastLocation.firstObject);
+                            
+                            //Also add activity to potIncident
+                            PotentialIncident* potIncident = [[PotentialIncident alloc]initWithLocationAccel: lastLoc xVal:data.acceleration.x yVal:data.acceleration.y zVal:data.acceleration.z];
+                            
+                            [[BuiltinUserCache database] putSensorData:@"key.usercache.location" value:potIncident];
+                            
+                        }
+
                     }
                 }
             }];
