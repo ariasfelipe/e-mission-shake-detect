@@ -38,6 +38,7 @@ var ShakeNotification = {
             exec(resolve, reject, "ShakeNotification", "disableEventListener", [eventName, notifyOptions]);
         });
     },
+
     /*
      * The iOS local notification code.
      * See 

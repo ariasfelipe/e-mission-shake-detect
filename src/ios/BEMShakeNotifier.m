@@ -353,50 +353,50 @@
             __block double acceleration = 0.0;
             __block double lastUpdated = 0.0;
             
-            double yAccelerationConst = 0.5;
+            double yAccelerationConst = 0.4;
             [motionManager startAccelerometerUpdatesToQueue:[NSOperationQueue mainQueue] withHandler:^(CMAccelerometerData *data, NSError *error){
-                double currTime = CACurrentMediaTime();
-                if((currTime - lastUpdated) >= 1.0){
+                double currTime = [BuiltinUserCache getCurrentTimeSecs];;
+                if((currTime - lastUpdated) >= 2.0){
                     double lastAcceleration = currentAcceleration;
-                    currentAcceleration = sqrtf(data.acceleration.z*data.acceleration.z + data.acceleration.y*data.acceleration.y*yAccelerationConst*yAccelerationConst);
+                    currentAcceleration = sqrtf(data.acceleration.x*data.acceleration.x + data.acceleration.y*data.acceleration.y*yAccelerationConst*yAccelerationConst);
                 
                     acceleration = acceleration*0.9f + (currentAcceleration - lastAcceleration);
                 
-                    if((acceleration > 5.0) && (fabs(data.acceleration.x) < 5.0)){
-                        [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                                   @"DetectedIncident"]
-                                                           showUI:FALSE];
-                        
+                    if((acceleration > 5.5) && (fabs(data.acceleration.z) < 3.0)){
                         
                         lastUpdated = currTime;
-                        [self notifyEvent:POTENTIAL_INCIDENT data:NULL];
+
                         NSArray* lastLocation = [[BuiltinUserCache database] getLastSensorData:@"key.usercache.filtered_location" nEntries:1 wrapperClass:[SimpleLocation class]];
                         
+                        NSMutableDictionary* retData = [NSMutableDictionary new];
+                        
                         if ([lastLocation count] == 0){
-                            return;
-                        }
-                        
-                        NSArray* lastActivity = [[BuiltinUserCache database] getLastSensorData:@"key.usercache.activity" nEntries:1 wrapperClass:[MotionActivity class]];
-                        
-                        if ([lastActivity count] == 0){
-        
-                            SimpleLocation *lastLoc = ((SimpleLocation*)lastLocation.firstObject);
-                        
-                            PotentialIncident* potIncident = [[PotentialIncident alloc]initWithLocationAccel: lastLoc xVal:data.acceleration.x yVal:data.acceleration.y zVal:data.acceleration.z];
-                        
-                            [[BuiltinUserCache database] putSensorData:@"key.usercache.location" value:potIncident];
+                            //only store time
+                            retData[@"inc_ts"] = @(currTime);
+                            
                         }
                         else{
-                            SimpleLocation *lastAc = ((SimpleLocation*)lastActivity.firstObject);
+                            //store time and other data on location
                             
                             SimpleLocation *lastLoc = ((SimpleLocation*)lastLocation.firstObject);
                             
-                            //Also add activity to potIncident
-                            PotentialIncident* potIncident = [[PotentialIncident alloc]initWithLocationAccel: lastLoc xVal:data.acceleration.x yVal:data.acceleration.y zVal:data.acceleration.z];
-                            
-                            [[BuiltinUserCache database] putSensorData:@"key.usercache.location" value:potIncident];
-                            
+                            retData[@"inc_ts"] = @(lastLoc.ts);
+                            retData[@"inc_latitude"] = @(lastLoc.latitude);
+                            retData[@"inc_longitude"] = @(lastLoc.longitude);
+                            retData[@"inc_altitude"] = @(lastLoc.altitude);
+                            retData[@"inc_speed"] = @(lastLoc.sensed_speed);
+                            retData[@"inc_accuracy"] = @(lastLoc.accuracy);
+                            retData[@"inc_bearing"] = @(lastLoc.bearing);
+                    
                         }
+                        
+                        
+                        retData[@"inc_xAccel"] = @(data.acceleration.x);
+                        retData[@"inc_yAccel"] = @(data.acceleration.y);
+                        retData[@"inc_zAccel"] = @(data.acceleration.z);
+                        retData[@"inc_combAccel"] = @(acceleration);
+
+                        [self notifyEvent:POTENTIAL_INCIDENT data:retData];
 
                     }
                 }

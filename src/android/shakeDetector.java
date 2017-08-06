@@ -20,10 +20,9 @@ import edu.berkeley.eecs.emission.R;
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityRecognitionActions;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
-import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
+import edu.berkeley.eecs.emission.cordova.usercache.UserCache;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
-import edu.berkeley.eecs.emission.cordova.tracker.wrapper.PotentialIncident;
-import edu.berkeley.eecs.emission.cordova.tracker.wrapper.AccelerometerReading;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.SimpleLocation;
 
 
 import android.app.Activity;
@@ -34,7 +33,6 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.location.Location;
@@ -43,19 +41,14 @@ import com.google.android.gms.location.ActivityRecognitionResult;
 import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.location.FusedLocationProviderApi;
 
-import java.util.Iterator;
-
 public class ShakeDetector extends Service implements SensorEventListener{
     private SensorManager sensorManager;
     private Sensor accelerometer;
     private Sensor gyroscope;
-    private Sensor linearAccelerometer;
     private float acceleration;
-    private float acceleration2;
     private float currAcceleration;
     private float lastAcceleration;
     private long lastUpdated;
-    private Intent shakeDetectorIntent;
 
     private static final String CONFIG_LIST_KEY = "config_list";
     private static final String MUTED_LIST_KEY = "muted_list";
@@ -71,16 +64,11 @@ public class ShakeDetector extends Service implements SensorEventListener{
     public int onStartCommand(Intent intent, int flags, int startId){
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        shakeDetectorIntent = intent;
 
         if(sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null)
         {
             accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
             sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL, new Handler());
-        }
-        else if(sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) != null) {
-            linearAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-            sensorManager.registerListener(this, linearAccelerometer, SensorManager.SENSOR_DELAY_NORMAL, new Handler());
         }
         else if(sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null)
         {
@@ -103,95 +91,40 @@ public class ShakeDetector extends Service implements SensorEventListener{
     public void onSensorChanged(SensorEvent event){
 
         long currTime = System.currentTimeMillis();
-        long deltaTime = currTime; // - lastUpdated;
+        long deltaTime = currTime - lastUpdated;
 
 
-        //Only get readings if an "accident" has not occured within the past 0.5 seconds
-        if(deltaTime > 500) { //Make the 500 a const
+        //Only get readings if an "accident" has not occured within the past 2 seconds
+        if(deltaTime > 2000) { 
 
             if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
 
-                Location loc = (Location)shakeDetectorIntent.getExtras().get(FusedLocationProviderApi.KEY_LOCATION_CHANGED);
-                if(loc == null){
-                    return;
-                }
-
-                int modeOfTransportation = -1;
-
-                if(ActivityRecognitionResult.hasResult(shakeDetectorIntent)){
-
-                    ActivityRecognitionResult result = ActivityRecognitionResult.extractResult(shakeDetectorIntent);
-                    DetectedActivity mostProbableActivity = result.getMostProbableActivity();
-                    modeOfTransportation = mostProbableActivity.getType();
-                }
-
-                AccelerometerReading accelerometerReading = new AccelerometerReading(loc, event.values, modeOfTransportation);
-                UserCacheFactory.getUserCache(this).putSensorData(R.string.key_usercache_location, accelerometerReading);
-
                 float xAcceleration = event.values[0];
                 float yAcceleration = event.values[1];
                 float zAcceleration = event.values[2];
 
                 //Used to diminish the effect of the acceleration in the y-direction
-                float yAccelerationConst = 0.6f;
+                float yAccelerationConst = 0.4f;
 
                 lastAcceleration = currAcceleration;
-                currAcceleration = (float) Math.sqrt((double) (zAcceleration * zAcceleration + yAcceleration * yAcceleration * yAccelerationConst * yAccelerationConst));
+                currAcceleration = (float) Math.sqrt((double) (xAcceleration * xAcceleration + yAcceleration * yAcceleration * yAccelerationConst * yAccelerationConst));
 
-                acceleration = acceleration * 0.95f + (currAcceleration - lastAcceleration);
-                String AccTag1 = "2Shake0.6A0.95-13-10";
+                acceleration = acceleration * 0.90f + (currAcceleration - lastAcceleration);
 
+                //String AccTag1 = "2Shake0.6A0.95-13-10";
                 //Log.i(this, AccTag1, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration) + ",");
 
-                if ((acceleration > 13f) && (Math.abs(xAcceleration) < 10)) {
+                if ((acceleration > 12f) && (Math.abs(zAcceleration) < 9)) {
                     lastUpdated = currTime;
-                    Log.i(this, AccTag1, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration) + ",");
-                    PotentialIncident potentialIncident = new PotentialIncident(loc, event.values, modeOfTransportation);
-                    UserCacheFactory.getUserCache(this).putSensorData(R.string.key_usercache_accelerometer, potentialIncident);
-                    notifyEvent(this, POTENTIAL_INCIDENT, null);
+
+                    try {
+                        storeDataAndNotify(this, event.values, currTime, acceleration);
+                    } catch(JSONException e) {
+                        Log.e(this, "storeDataAndNotify", e.getMessage());
+                        Log.e(this, "storeDataAndNotify", e.toString());
+                    }
+
                 }
-
-                acceleration2 = acceleration2 * 0.85f + (currAcceleration - lastAcceleration);
-                String AccTag2 = "2Shake0.6A0.85-13-10";
-
-                if ((acceleration > 13f) && (Math.abs(xAcceleration) < 10)) {
-                    lastUpdated = currTime;
-                    Log.i(this, AccTag2, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration2) + ",");
-                    notifyEvent(this, POTENTIAL_INCIDENT, null);
-                }
-            }
-            else if(event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION){
-                float xAcceleration = event.values[0];
-                float yAcceleration = event.values[1];
-                float zAcceleration = event.values[2];
-
-                //Used to diminish the effect of the acceleration in the y-direction
-                float yAccelerationConst = 0.6f;
-
-                lastAcceleration = currAcceleration;
-                currAcceleration = (float) Math.sqrt((double) (zAcceleration * zAcceleration + yAcceleration * yAcceleration * yAccelerationConst * yAccelerationConst));
-
-                acceleration = acceleration * 0.95f + (currAcceleration - lastAcceleration);
-                String LAccTag = "2Shake0.6LA0.95";
-
-                if ((acceleration > 13.0f) && (Math.abs(xAcceleration) < 10.0f)) {
-                    lastUpdated = currTime;
-                    Log.i(this, LAccTag, "," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration) + ",");
-                    notifyEvent(this, POTENTIAL_INCIDENT, null);
-                }
-
-                acceleration2 = acceleration2 * 0.85f + (currAcceleration - lastAcceleration);
-                String LAccTag2 = "2Shake0.6LA0.85";
-
-                //Log.i(this, LAccTag2, ","+String.valueOf(currTime)+"," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration2) + ",");
-
-                if ((acceleration > 13f) && (Math.abs(xAcceleration) < 10)) {
-                    lastUpdated = currTime;
-                    //NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, LAccTag2);
-                    Log.i(this, LAccTag2, "," + Float.toString(xAcceleration) + "," + Float.toString(yAcceleration) + "," + Float.toString(zAcceleration) + "," + Float.toString(acceleration2) + ",");
-                    notifyEvent(this, POTENTIAL_INCIDENT, null);
-                }
-
             }
             else if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
                 float xRotation = event.values[0];
@@ -212,16 +145,17 @@ public class ShakeDetector extends Service implements SensorEventListener{
 
     public void notifyEvent(Context context, String eventName, JSONObject autogenData) {
         String TAG = "ShakeDetector";
-
         Log.d(context, TAG, "Generating all notifications for generic "+eventName);
         try {
             JSONObject notifyConfigWrapper = UserCacheFactory.getUserCache(context).getLocalStorage(eventName, false);
+
             if (notifyConfigWrapper == null) {
                 Log.d(context, TAG, "no configuration found for event "+eventName+", skipping notification");
                 return;
             }
             JSONArray notifyConfigs = notifyConfigWrapper.getJSONArray(CONFIG_LIST_KEY);
             JSONArray mutedConfigs = notifyConfigWrapper.optJSONArray(MUTED_LIST_KEY);
+
             for(int i = 0; i < notifyConfigs.length(); i++) {
                 try {
                     JSONObject currNotifyConfig = notifyConfigs.getJSONObject(i);
@@ -274,5 +208,44 @@ public class ShakeDetector extends Service implements SensorEventListener{
         return -1;
     }
 
+    private void storeDataAndNotify(Context context, float[] accelerations, long currTime, float combinedAccel) throws JSONException{
 
+        JSONObject incidentData = new JSONObject();
+        UserCache uc = UserCacheFactory.getUserCache(this);
+        SimpleLocation loc[] = uc.getLastSensorData(R.string.key_usercache_filtered_location, 1, SimpleLocation.class);
+
+        if (loc.length == 0) {
+            incidentData.put("inc_ts", ((double) currTime) / 1000);
+        } else {
+            SimpleLocation mostRecentLocation = loc[0];
+            incidentData.put("inc_ts", ((double) currTime) / 1000);
+            incidentData.put("inc_latitude", mostRecentLocation.getLatitude());
+            incidentData.put("inc_longitude", mostRecentLocation.getLongitude());
+            incidentData.put("inc_altitude", mostRecentLocation.getAltitude());
+            incidentData.put("inc_speed", mostRecentLocation.getSensed_speed());
+            incidentData.put("inc_accuracy", mostRecentLocation.getAccuracy());
+            incidentData.put("inc_bearing", mostRecentLocation.getBearing());
+        }
+
+        //int modeOfTransportation = -1;
+
+        //Storage of mode of transportation (not implemented on iOS)
+        /*
+        ActivityRecognitionResult currActivity[] = uc.getLastSensorData(R.string.key_usercache_activity, 1, ActivityRecognitionResult.class);
+
+        if ((currActivity.length != 0) && (currActivity[0] != null)){
+            DetectedActivity mostProbableActivity = currActivity[0].getMostProbableActivity();
+            modeOfTransportation = mostProbableActivity.getType();
+        }
+
+        incidentData.put("inc_mode", modeOfTransportation);
+        */
+
+        incidentData.put("inc_xAccel", accelerations[0]);
+        incidentData.put("inc_yAccel", accelerations[1]);
+        incidentData.put("inc_zAccel", accelerations[2]);
+        incidentData.put("inc_combAccel", combinedAccel);
+
+        notifyEvent(context, POTENTIAL_INCIDENT, incidentData);
+    }
 }

@@ -233,6 +233,17 @@ public class ShakeNotifier extends CordovaPlugin {
             addOrReplaceEntry(ctxt, eventName, localNotifyConfig, MUTED_LIST_KEY);
             callbackContext.success();
             return true;
+        } 
+
+            final JSONObject localNotifyConfig = args.getJSONObject(1);
+            if (localNotifyConfig == null || localNotifyConfig.length() == 0) {
+                callbackContext.error(CONFIG_ERROR);
+                return false;
+            }
+
+            addOrReplaceEntry(ctxt, eventName, localNotifyConfig, MUTED_LIST_KEY);
+            callbackContext.success();
+            return true;
         }
         return false;
     }
